@@ -1,0 +1,26 @@
+---
+- name: put container_environment.sh
+  copy: src=container_environment.sh dest={{ ext_graphite_api_influxdb_env_volume }}/container_environment.sh
+
+- name: put container_environment.json
+  copy: src=container_environment.json dest={{ ext_graphite_api_influxdb_env_volume }}/container_environment.json
+
+- name: check if a graphite-api-influxdb container is started
+  command: bash -c "docker ps | grep graphite-api-influxdb"
+  ignore_errors: True
+  register: result
+
+- name: start a graphite-api-influxdb container
+  command: docker run -d
+              -h {{ ansible_hostname }}-graphite-api-influxdb
+              --dns {{ ansible_docker0.ipv4.address }}
+              --dns 8.8.8.8
+              -v {{ ext_graphite_api_influxdb_env_volume }}:/etc/container_environment
+              -v {{ ext_graphite_api_influxdb_env_volume }}/container_environment.sh:/etc/container_environment.sh
+              -v {{ ext_graphite_api_influxdb_env_volume }}/container_environment.json:/etc/container_environment.json
+              -v {{ ext_graphite_api_influxdb_logs_volume }}:/var/log/graphite-api
+              -v {{ ext_graphite_api_influxdb_tmp_volume }}:/var/tmp
+              --read-only=true
+              --name=graphite-api-influxdb gitinsky/graphite-api-influxdb:latest
+  register: docker_id
+  when: result|failed
