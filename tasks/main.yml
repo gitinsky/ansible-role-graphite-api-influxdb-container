@@ -5,6 +5,12 @@
 - name: put container_environment.json
   copy: src=container_environment.json dest={{ ext_graphite_api_influxdb_env_volume }}/container_environment.json
 
+- name: create ext volume for configs
+  file: state=directory path={{ ext_graphite_api_influxdb_conf_volume }}
+
+- name: put /etc/graphite-api.yaml
+  template: src=graphite-api.yaml dest={{ ext_graphite_api_influxdb_conf_volume }}/graphite-api.yaml
+
 - name: check if a graphite-api-influxdb container is started
   command: bash -c "docker ps | grep graphite-api-influxdb"
   ignore_errors: True
@@ -19,7 +25,9 @@
               -v {{ ext_graphite_api_influxdb_env_volume }}/container_environment.sh:/etc/container_environment.sh
               -v {{ ext_graphite_api_influxdb_env_volume }}/container_environment.json:/etc/container_environment.json
               -v {{ ext_graphite_api_influxdb_logs_volume }}:/var/log/graphite-api
+              -v {{ ext_graphite_api_influxdb_conf_volume }}/graphite-api.yaml:/etc/graphite-api.yaml
               -v {{ ext_graphite_api_influxdb_tmp_volume }}:/var/tmp
+              -p {{ graphite_api_http_port }}:8000
               --read-only=true
               --name=graphite-api-influxdb gitinsky/graphite-api-influxdb:latest
   register: docker_id
